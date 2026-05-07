@@ -1,0 +1,102 @@
+# ============================================
+# DEPENDENCIES — jamais besoin de lire ça
+# ============================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+
+# ============================================
+# BUILD OUTPUTS — fichiers générés, pas source
+# ============================================
+.next/
+out/
+dist/
+build/
+
+# ============================================
+# SUPABASE — migrations auto-générées & cache
+# ============================================
+supabase/.branches/
+supabase/.temp/
+
+# ============================================
+# PRISMA — client généré (lourd, inutile à lire)
+# ============================================
+prisma/generated/
+node_modules/.prisma/
+
+# ============================================
+# TESTS — coverage reports (pas le code de test)
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# CACHE — tous les caches outils
+# ============================================
+.cache/
+.turbo/
+.swc/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================
+# ENVIRONNEMENT — secrets, jamais dans le contexte
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# ============================================
+# GIT — historique inutile pour coder
+# ============================================
+.git/
+
+# ============================================
+# OS & IDE — bruit système
+# ============================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ============================================
+# LOGS — jamais utiles sauf debug actif
+# ============================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# ASSETS LOURDS — Claude ne peut pas les lire
+# ============================================
+public/fonts/
+public/videos/
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.mp4
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.webp
+
+# ============================================
+# LOCK FILES — inutiles pour le code
+# ============================================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
