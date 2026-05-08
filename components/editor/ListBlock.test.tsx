@@ -46,6 +46,6 @@ describe("ListBlock", () => {
 
   it("renders the slash menu when slashFilter is not null", () => {
     render(<ListBlock type="BULLET_LIST" {...defaultProps} slashFilter="" slashActiveIndex={0} />);
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 });

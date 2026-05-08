@@ -76,6 +76,6 @@ describe("TodoBlock", () => {
 
   it("renders the slash menu when slashFilter is not null", () => {
     render(<TodoBlock {...defaultProps} slashFilter="" slashActiveIndex={0} />);
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 });

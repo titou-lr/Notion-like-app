@@ -38,17 +38,16 @@ export function SlashMenu({ filter, activeIndex, onSelect }: SlashMenuProps) {
 
   return (
     <div
-      role="menu"
       className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-surface shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
     >
       {items.length === 0 ? (
         <p className="px-3 py-2 text-sm text-text-secondary">No results</p>
       ) : (
-        <ul>
+        <ul role="listbox">
           {items.map((item, i) => (
             <li
               key={item.type}
-              role="menuitem"
+              role="option"
               aria-selected={i === activeIndex}
               className={`flex cursor-pointer flex-col px-3 py-2 transition-colors duration-150 ${
                 i === activeIndex ? "bg-surface-hover" : "hover:bg-surface-hover"

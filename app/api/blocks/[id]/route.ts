@@ -6,7 +6,7 @@ import { z } from "zod";
 const BLOCK_TYPES = ["TEXT", "HEADING_1", "HEADING_2", "HEADING_3", "BULLET_LIST", "NUMBERED_LIST", "CODE", "IMAGE", "DIVIDER", "QUOTE", "TODO"] as const;
 
 const patchSchema = z.object({
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
   type: z.enum(BLOCK_TYPES).optional(),
   order: z.number().int().optional(),
 });

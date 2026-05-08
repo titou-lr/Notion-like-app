@@ -63,6 +63,6 @@ describe("CodeBlock", () => {
 
   it("renders the slash menu when slashFilter is not null", () => {
     render(<CodeBlock {...defaultProps} slashFilter="" slashActiveIndex={0} />);
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 });

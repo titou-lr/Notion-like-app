@@ -329,7 +329,7 @@ describe("BlockEditor", () => {
       />
     );
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "/" } });
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 
   it("typing '/he' filters the slash menu to headings only", () => {
@@ -340,7 +340,7 @@ describe("BlockEditor", () => {
       />
     );
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "/he" } });
-    expect(screen.getAllByRole("menuitem")).toHaveLength(3);
+    expect(screen.getAllByRole("option")).toHaveLength(3);
   });
 
   it("pressing Escape closes the slash menu and clears the block text", () => {
@@ -352,9 +352,9 @@ describe("BlockEditor", () => {
     );
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "/" } });
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
     fireEvent.keyDown(textarea, { key: "Escape" });
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByRole("textbox")).toHaveValue("");
   });
 
@@ -368,7 +368,7 @@ describe("BlockEditor", () => {
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "/" } });
     fireEvent.keyDown(textarea, { key: "ArrowDown" });
-    const items = screen.getAllByRole("menuitem");
+    const items = screen.getAllByRole("option");
     expect(items[1]).toHaveAttribute("aria-selected", "true");
   });
 
@@ -466,7 +466,7 @@ describe("BlockEditor", () => {
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "/head" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByRole("textbox")).toHaveValue("");
   });
 

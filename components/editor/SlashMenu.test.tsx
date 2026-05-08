@@ -5,12 +5,12 @@ import { SlashMenu } from "./SlashMenu";
 describe("SlashMenu", () => {
   it("renders all 10 block types when filter is empty", () => {
     render(<SlashMenu filter="" activeIndex={0} onSelect={vi.fn()} />);
-    expect(screen.getAllByRole("menuitem")).toHaveLength(10);
+    expect(screen.getAllByRole("option")).toHaveLength(10);
   });
 
   it("shows only matching items when filter is set", () => {
     render(<SlashMenu filter="head" activeIndex={0} onSelect={vi.fn()} />);
-    const items = screen.getAllByRole("menuitem");
+    const items = screen.getAllByRole("option");
     expect(items).toHaveLength(3);
     expect(screen.getByText("Heading 1")).toBeInTheDocument();
     expect(screen.getByText("Heading 2")).toBeInTheDocument();
@@ -19,13 +19,13 @@ describe("SlashMenu", () => {
 
   it("shows 'No results' when filter matches nothing", () => {
     render(<SlashMenu filter="zzz" activeIndex={0} onSelect={vi.fn()} />);
-    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
     expect(screen.getByText(/no results/i)).toBeInTheDocument();
   });
 
   it("marks the item at activeIndex as selected via aria-selected", () => {
     render(<SlashMenu filter="" activeIndex={2} onSelect={vi.fn()} />);
-    const items = screen.getAllByRole("menuitem");
+    const items = screen.getAllByRole("option");
     expect(items[2]).toHaveAttribute("aria-selected", "true");
     expect(items[0]).toHaveAttribute("aria-selected", "false");
   });

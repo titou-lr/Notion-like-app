@@ -51,11 +51,11 @@ describe("QuoteBlock", () => {
 
   it("renders the slash menu when slashFilter is not null", () => {
     render(<QuoteBlock {...defaultProps} slashFilter="" slashActiveIndex={0} />);
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 
   it("does not render the slash menu when slashFilter is null", () => {
     render(<QuoteBlock {...defaultProps} slashFilter={null} />);
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 });
