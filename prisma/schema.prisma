@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Supabase requires two URLs with Prisma:
+// DATABASE_URL  → connection pooler (Supavisor) — used by the app at runtime
+// DIRECT_URL    → direct connection — used by `prisma migrate` only
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  pages     Page[]
+  createdAt DateTime @default(now())
+}
+
+model Page {
+  id        String  @id @default(cuid())
+  title     String  @default("Untitled")
+  icon      String?
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  parentId  String?
+  parent    Page?   @relation("PageChildren", fields: [parentId], references: [id])
+  children  Page[]  @relation("PageChildren")
+  blocks    Block[]
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Block {
+  id        String    @id @default(cuid())
+  pageId    String
+  page      Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type      BlockType
+  content   Json
+  order     Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum BlockType {
+  TEXT
+  HEADING_1
+  HEADING_2
+  HEADING_3
+  BULLET_LIST
+  NUMBERED_LIST
+  CODE
+  IMAGE
+  DIVIDER
+  QUOTE
+  TODO
+}

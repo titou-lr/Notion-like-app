@@ -1,0 +1,57 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* Design tokens */
+    --background:     #0a0a0a;
+    --surface:        #111111;
+    --surface-hover:  #1a1a1a;
+    --border:         #222222;
+    --border-strong:  #333333;
+    --text-primary:   #ededed;
+    --text-secondary: #888888;
+    --text-disabled:  #444444;
+    --accent:         #ffffff;
+    --accent-muted:   #a0a0a0;
+    --destructive:    #ff4444;
+    --success:        #00cc88;
+
+    /* shadcn component variable mappings */
+    --foreground:           var(--text-primary);
+    --card:                 var(--surface);
+    --card-foreground:      var(--text-primary);
+    --popover:              var(--surface);
+    --popover-foreground:   var(--text-primary);
+    --primary:              var(--accent);
+    --primary-foreground:   var(--background);
+    --secondary:            var(--surface);
+    --secondary-foreground: var(--text-primary);
+    --muted:                var(--surface-hover);
+    --muted-foreground:     var(--text-secondary);
+    --input:                var(--surface-hover);
+    --ring:                 var(--border-strong);
+    --radius:               0.5rem;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: var(--font-sans), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
