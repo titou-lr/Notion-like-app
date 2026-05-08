@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function buildPageTree(
-  pages: Array<{ id: string; title: string; parentId: string | null }>
+  pages: Array<{ id: string; title: string; icon: string | null; parentId: string | null }>
 ): SidebarPage[] {
   const map = new Map<string, SidebarPage>()
   for (const page of pages) {
