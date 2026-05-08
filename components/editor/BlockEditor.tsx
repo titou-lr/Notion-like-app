@@ -53,8 +53,26 @@ function toLocal(b: Block): LocalBlock {
   return { ...b, isPending: false };
 }
 
-// Module-level component so useDragControls is called at the component root, not inside a loop.
-function DraggableItem({ block, children }: { block: LocalBlock; children: React.ReactNode }) {
+// Module-level so useDragControls is called at component root, not inside a loop.
+function DraggableItem({
+  block,
+  showSaveButton,
+  onSave,
+  onFocusBlock,
+  onBlurBlock,
+  onMoveUp,
+  onMoveDown,
+  children,
+}: {
+  block: LocalBlock;
+  showSaveButton: boolean;
+  onSave: () => void;
+  onFocusBlock: () => void;
+  onBlurBlock: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  children: React.ReactNode;
+}) {
   const controls = useDragControls();
   return (
     <Reorder.Item
@@ -64,7 +82,15 @@ function DraggableItem({ block, children }: { block: LocalBlock; children: React
       as="div"
       className="outline-none"
     >
-      <BlockWrapper onDragHandlePointerDown={(e) => controls.start(e)}>
+      <BlockWrapper
+        onDragHandlePointerDown={(e) => controls.start(e)}
+        showSaveButton={showSaveButton}
+        onSave={onSave}
+        onFocusBlock={onFocusBlock}
+        onBlurBlock={onBlurBlock}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+      >
         {children}
       </BlockWrapper>
     </Reorder.Item>
@@ -77,12 +103,73 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
     initialBlocks.length > 0 ? initialBlocks.map(toLocal) : [INITIAL_BLOCK]
   );
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const [dirtyBlockIds, setDirtyBlockIds] = useState<Set<string>>(new Set());
 
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
 
+  // Ref mirror of dirtyBlockIds for synchronous access in callbacks
+  const dirtyRef = useRef<Set<string>>(new Set());
+
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const markDirty = (blockId: string) => {
+    dirtyRef.current.add(blockId);
+    setDirtyBlockIds((prev) => new Set(prev).add(blockId));
+  };
+
+  const markClean = (blockId: string) => {
+    dirtyRef.current.delete(blockId);
+    setDirtyBlockIds((prev) => {
+      const s = new Set(prev);
+      s.delete(blockId);
+      return s;
+    });
+  };
+
+  const save = async (block: LocalBlock, text: string) => {
+    const content = { ...block.content, text };
+    if (block.isPending) {
+      const res = await fetch(`/api/pages/${pageId}/blocks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: block.type, content, order: block.order }),
+      });
+      const { data } = await res.json();
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === block.id ? { ...b, id: data.id, isPending: false } : b))
+      );
+      router.refresh();
+    } else {
+      await fetch(`/api/blocks/${block.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+    }
+  };
+
+  // saveBlock marks clean synchronously (prevents double-save on blur after Escape),
+  // then flushes to the API.
+  const saveBlock = async (blockId: string) => {
+    const block = blocksRef.current.find((b) => b.id === blockId);
+    if (!block) return;
+    const text = (block.content.text as string) ?? "";
+    markClean(blockId);
+    await save(block, text);
+  };
+
+  const handleFocus = (blockId: string) => {
+    setFocusedBlockId(blockId);
+  };
+
+  const handleBlur = (blockId: string) => {
+    setFocusedBlockId(null);
+    if (dirtyRef.current.has(blockId)) {
+      void saveBlock(blockId);
+    }
+  };
 
   const handleReorder = (newSorted: LocalBlock[]) => {
     const reordered = newSorted.map((block, idx) => ({ ...block, order: idx }));
@@ -98,10 +185,75 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
     });
   };
 
+  const handleMoveUp = (blockId: string) => {
+    const sorted = [...blocksRef.current].sort((a, b) => a.order - b.order);
+    const idx = sorted.findIndex((b) => b.id === blockId);
+    if (idx <= 0) return;
+
+    const above = sorted[idx - 1];
+    const current = sorted[idx];
+
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id === current.id) return { ...b, order: above.order };
+        if (b.id === above.id) return { ...b, order: current.order };
+        return b;
+      })
+    );
+
+    if (!current.isPending) {
+      void fetch(`/api/blocks/${current.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: current.content, order: above.order }),
+      });
+    }
+    if (!above.isPending) {
+      void fetch(`/api/blocks/${above.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: above.content, order: current.order }),
+      });
+    }
+  };
+
+  const handleMoveDown = (blockId: string) => {
+    const sorted = [...blocksRef.current].sort((a, b) => a.order - b.order);
+    const idx = sorted.findIndex((b) => b.id === blockId);
+    if (idx >= sorted.length - 1) return;
+
+    const below = sorted[idx + 1];
+    const current = sorted[idx];
+
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id === current.id) return { ...b, order: below.order };
+        if (b.id === below.id) return { ...b, order: current.order };
+        return b;
+      })
+    );
+
+    if (!current.isPending) {
+      void fetch(`/api/blocks/${current.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: current.content, order: below.order }),
+      });
+    }
+    if (!below.isPending) {
+      void fetch(`/api/blocks/${below.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: below.content, order: current.order }),
+      });
+    }
+  };
+
   const handleChange = (blockId: string, text: string) => {
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, content: { ...b.content, text } } : b))
     );
+    markDirty(blockId);
 
     if (text.startsWith("/")) {
       const filter = text.slice(1).toLowerCase();
@@ -110,14 +262,8 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
           ? { ...prev, filter, activeIndex: 0 }
           : { blockId, filter, activeIndex: 0 }
       );
-      clearTimeout(saveTimerRef.current);
     } else {
       setSlashMenu((prev) => (prev?.blockId === blockId ? null : prev));
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        const block = blocksRef.current.find((b) => b.id === blockId);
-        if (block) void save(block, text);
-      }, 500);
     }
   };
 
@@ -156,11 +302,13 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
         setBlocks((prev) =>
           prev.map((b) => (b.id === blockId ? { ...b, content: { ...b.content, text: "" } } : b))
         );
+        markClean(blockId);
         return;
       }
     }
 
     const currentBlockType = blocksRef.current.find((b) => b.id === blockId)?.type;
+
     if (currentBlockType === "CODE") {
       if (e.key === "Tab") {
         e.preventDefault();
@@ -172,41 +320,38 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
           const prev = (block.content.text as string) ?? "";
           const newText = prev.slice(0, start) + "  " + prev.slice(end);
           setBlocks((bs) =>
-            bs.map((b) => (b.id === blockId ? { ...b, content: { ...b.content, text: newText } } : b))
+            bs.map((b) =>
+              b.id === blockId ? { ...b, content: { ...b.content, text: newText } } : b
+            )
           );
+          markDirty(blockId);
           requestAnimationFrame(() => {
             const ta = textareaRefs.current.get(blockId);
             if (ta) ta.selectionStart = ta.selectionEnd = start + 2;
           });
-          clearTimeout(saveTimerRef.current);
-          saveTimerRef.current = setTimeout(() => {
-            const b = blocksRef.current.find((b) => b.id === blockId);
-            if (b) void save(b, newText);
-          }, 500);
         }
         return;
       }
 
       if (e.key === "Escape") {
         e.preventDefault();
-        const sorted = [...blocksRef.current].sort((a, b) => a.order - b.order);
-        const idx = sorted.findIndex((b) => b.id === blockId);
-        const maxOrder = Math.max(...sorted.map((b) => b.order));
-        const newBlock: LocalBlock = {
-          id: crypto.randomUUID(),
-          type: "TEXT",
-          content: { text: "" },
-          order: maxOrder + 1,
-          isPending: true,
-        };
-        setBlocks([...sorted.slice(0, idx + 1), newBlock, ...sorted.slice(idx + 1)]);
-        requestAnimationFrame(() => {
-          textareaRefs.current.get(newBlock.id)?.focus();
-        });
+        if (dirtyRef.current.has(blockId)) {
+          void saveBlock(blockId); // markClean runs synchronously inside
+        }
+        textareaRefs.current.get(blockId)?.blur();
         return;
       }
 
       if (e.key === "Enter") return; // let browser insert newline
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (dirtyRef.current.has(blockId)) {
+        void saveBlock(blockId); // markClean runs synchronously, prevents double-save on blur
+      }
+      textareaRefs.current.get(blockId)?.blur();
+      return;
     }
 
     if (e.key === "Enter") {
@@ -230,11 +375,7 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
         isPending: true,
       };
 
-      setBlocks([
-        ...sorted.slice(0, idx + 1),
-        newBlock,
-        ...sorted.slice(idx + 1),
-      ]);
+      setBlocks([...sorted.slice(0, idx + 1), newBlock, ...sorted.slice(idx + 1)]);
 
       requestAnimationFrame(() => {
         textareaRefs.current.get(newBlock.id)?.focus();
@@ -252,6 +393,7 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
       const focusTarget = sorted[idx - 1] ?? sorted[idx + 1];
 
       setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      markClean(blockId);
 
       if (!block.isPending) {
         void fetch(`/api/blocks/${blockId}`, { method: "DELETE" });
@@ -265,7 +407,7 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 
   const handleSlashSelect = (blockId: string, type: BlockType) => {
     setSlashMenu(null);
-    clearTimeout(saveTimerRef.current);
+    markClean(blockId);
 
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, type, content: { text: "" } } : b))
@@ -303,14 +445,7 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, content: { ...b.content, language } } : b))
     );
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      const block = blocksRef.current.find((b) => b.id === blockId);
-      if (block) {
-        const text = (block.content.text as string) ?? "";
-        void save(block, text);
-      }
-    }, 500);
+    markDirty(blockId);
   };
 
   const handleRef = (blockId: string, el: HTMLTextAreaElement | null) => {
@@ -318,28 +453,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
       textareaRefs.current.set(blockId, el);
     } else {
       textareaRefs.current.delete(blockId);
-    }
-  };
-
-  const save = async (block: LocalBlock, text: string) => {
-    const content = { ...block.content, text };
-    if (block.isPending) {
-      const res = await fetch(`/api/pages/${pageId}/blocks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: block.type, content, order: block.order }),
-      });
-      const { data } = await res.json();
-      setBlocks((prev) =>
-        prev.map((b) => (b.id === block.id ? { ...b, id: data.id, isPending: false } : b))
-      );
-      router.refresh();
-    } else {
-      await fetch(`/api/blocks/${block.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
     }
   };
 
@@ -357,10 +470,20 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
         const slashFilter = slashMenu?.blockId === block.id ? slashMenu.filter : null;
         const slashActiveIndex = slashMenu?.blockId === block.id ? slashMenu.activeIndex : 0;
         const onSlashSelect = (type: BlockType) => handleSlashSelect(block.id, type);
+        const showSaveButton = focusedBlockId === block.id && dirtyBlockIds.has(block.id);
 
         if (block.type === "DIVIDER") {
           return (
-            <DraggableItem key={block.id} block={block}>
+            <DraggableItem
+              key={block.id}
+              block={block}
+              showSaveButton={false}
+              onSave={() => {}}
+              onFocusBlock={() => handleFocus(block.id)}
+              onBlurBlock={() => handleBlur(block.id)}
+              onMoveUp={() => handleMoveUp(block.id)}
+              onMoveDown={() => handleMoveDown(block.id)}
+            >
               <DividerBlock
                 onEnter={() => {
                   const maxOrder = Math.max(...sorted.map((b) => b.order));
@@ -383,7 +506,16 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 
         if (block.type === "BULLET_LIST" || block.type === "NUMBERED_LIST") {
           return (
-            <DraggableItem key={block.id} block={block}>
+            <DraggableItem
+              key={block.id}
+              block={block}
+              showSaveButton={showSaveButton}
+              onSave={() => void saveBlock(block.id)}
+              onFocusBlock={() => handleFocus(block.id)}
+              onBlurBlock={() => handleBlur(block.id)}
+              onMoveUp={() => handleMoveUp(block.id)}
+              onMoveDown={() => handleMoveDown(block.id)}
+            >
               <ListBlock
                 blockId={block.id}
                 type={block.type}
@@ -402,7 +534,16 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 
         if (block.type === "CODE") {
           return (
-            <DraggableItem key={block.id} block={block}>
+            <DraggableItem
+              key={block.id}
+              block={block}
+              showSaveButton={showSaveButton}
+              onSave={() => void saveBlock(block.id)}
+              onFocusBlock={() => handleFocus(block.id)}
+              onBlurBlock={() => handleBlur(block.id)}
+              onMoveUp={() => handleMoveUp(block.id)}
+              onMoveDown={() => handleMoveDown(block.id)}
+            >
               <CodeBlock
                 blockId={block.id}
                 text={(block.content.text as string | undefined) ?? ""}
@@ -421,7 +562,16 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 
         if (block.type === "QUOTE") {
           return (
-            <DraggableItem key={block.id} block={block}>
+            <DraggableItem
+              key={block.id}
+              block={block}
+              showSaveButton={showSaveButton}
+              onSave={() => void saveBlock(block.id)}
+              onFocusBlock={() => handleFocus(block.id)}
+              onBlurBlock={() => handleBlur(block.id)}
+              onMoveUp={() => handleMoveUp(block.id)}
+              onMoveDown={() => handleMoveDown(block.id)}
+            >
               <QuoteBlock
                 blockId={block.id}
                 text={(block.content.text as string | undefined) ?? ""}
@@ -438,7 +588,16 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 
         if (block.type === "TODO") {
           return (
-            <DraggableItem key={block.id} block={block}>
+            <DraggableItem
+              key={block.id}
+              block={block}
+              showSaveButton={showSaveButton}
+              onSave={() => void saveBlock(block.id)}
+              onFocusBlock={() => handleFocus(block.id)}
+              onBlurBlock={() => handleBlur(block.id)}
+              onMoveUp={() => handleMoveUp(block.id)}
+              onMoveDown={() => handleMoveDown(block.id)}
+            >
               <TodoBlock
                 blockId={block.id}
                 text={(block.content.text as string | undefined) ?? ""}
@@ -456,7 +615,16 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
         }
 
         return (
-          <DraggableItem key={block.id} block={block}>
+          <DraggableItem
+            key={block.id}
+            block={block}
+            showSaveButton={showSaveButton}
+            onSave={() => void saveBlock(block.id)}
+            onFocusBlock={() => handleFocus(block.id)}
+            onBlurBlock={() => handleBlur(block.id)}
+            onMoveUp={() => handleMoveUp(block.id)}
+            onMoveDown={() => handleMoveDown(block.id)}
+          >
             <EditableBlock
               block={block}
               onChange={handleChange}

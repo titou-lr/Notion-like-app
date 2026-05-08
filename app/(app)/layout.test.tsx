@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
   createClient: () => ({
     auth: {
@@ -15,6 +19,16 @@ vi.mock("@/lib/data/pages", () => ({
 
 vi.mock("@/components/sidebar/Sidebar", () => ({
   Sidebar: () => <div data-testid="sidebar" />,
+}));
+
+vi.mock("framer-motion", () => ({
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  motion: {
+    div: ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) => (
+      <div onClick={onClick}>{children}</div>
+    ),
+    aside: ({ children }: { children?: React.ReactNode }) => <aside>{children}</aside>,
+  },
 }));
 
 import AppLayout from "./layout";

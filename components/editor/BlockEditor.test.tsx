@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BlockEditor } from "./BlockEditor";
 import type { Block } from "@/types";
@@ -56,11 +56,10 @@ const block = (overrides: Partial<Block> & { type: Block["type"] }): Block => ({
 
 describe("BlockEditor", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({}) }));
   });
-  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+  afterEach(() => { vi.unstubAllGlobals(); });
 
   it("shows a single empty textarea when no blocks are provided", () => {
     render(<BlockEditor pageId="page-1" blocks={[]} />);
@@ -114,8 +113,33 @@ describe("BlockEditor", () => {
     expect(screen.getByDisplayValue("Hello World")).toBeInTheDocument();
   });
 
-  it("calls PATCH after the debounce delay when editing an existing block", async () => {
-    vi.useFakeTimers();
+  // — Save button & blur-based save —
+
+  it("shows a save button when a block is focused and has unsaved changes", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "b1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    const textarea = screen.getByDisplayValue("Hello");
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "Hello World" } });
+    expect(screen.getByRole("button", { name: /save block/i })).toBeInTheDocument();
+  });
+
+  it("does not show save button when block has no unsaved changes", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "b1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    fireEvent.focus(screen.getByDisplayValue("Hello"));
+    expect(screen.queryByRole("button", { name: /save block/i })).not.toBeInTheDocument();
+  });
+
+  it("does not call fetch during typing — save is deferred", () => {
     const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -125,22 +149,35 @@ describe("BlockEditor", () => {
         blocks={[block({ id: "block-1", type: "TEXT", content: { text: "Hello" } })]}
       />
     );
-
+    fireEvent.focus(screen.getByDisplayValue("Hello"));
     fireEvent.change(screen.getByDisplayValue("Hello"), { target: { value: "Hello World" } });
     expect(mockFetch).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(500);
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/blocks/block-1",
-      expect.objectContaining({ method: "PATCH" })
-    );
-
-    vi.useRealTimers();
   });
 
-  it("calls POST to create a new block when saving a pending block", async () => {
-    vi.useFakeTimers();
+  it("calls PATCH when an existing block is blurred with unsaved changes", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "block-1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    const textarea = screen.getByDisplayValue("Hello");
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "Hello World" } });
+    fireEvent.blur(textarea);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/blocks/block-1",
+        expect.objectContaining({ method: "PATCH" })
+      );
+    });
+  });
+
+  it("calls POST when a pending block is blurred with content", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       json: async () => ({ data: { id: "real-block-id" } }),
     });
@@ -148,17 +185,64 @@ describe("BlockEditor", () => {
 
     render(<BlockEditor pageId="page-1" blocks={[]} />);
 
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "New content" } });
+    const textarea = screen.getByRole("textbox");
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "New content" } });
+    fireEvent.blur(textarea);
 
-    await vi.advanceTimersByTimeAsync(500);
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/pages/page-1/blocks",
-      expect.objectContaining({ method: "POST" })
-    );
-
-    vi.useRealTimers();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/pages/page-1/blocks",
+        expect.objectContaining({ method: "POST" })
+      );
+    });
   });
+
+  it("save button disappears after blur (block is saved and marked clean)", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "b1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    const textarea = screen.getByDisplayValue("Hello");
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "Hello World" } });
+    expect(screen.getByRole("button", { name: /save block/i })).toBeInTheDocument();
+
+    fireEvent.blur(textarea);
+    expect(screen.queryByRole("button", { name: /save block/i })).not.toBeInTheDocument();
+  });
+
+  it("pressing Escape on a TEXT block triggers save and removes the save button", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "b1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    const textarea = screen.getByDisplayValue("Hello");
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "Hello World" } });
+
+    fireEvent.keyDown(textarea, { key: "Escape" });
+
+    expect(screen.queryByRole("button", { name: /save block/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/blocks/b1",
+        expect.objectContaining({ method: "PATCH" })
+      );
+    });
+  });
+
+  // — Block creation / deletion —
 
   it("pressing Enter creates a new block below the current one", () => {
     render(
@@ -214,14 +298,14 @@ describe("BlockEditor", () => {
         ]}
       />
     );
-
     fireEvent.keyDown(screen.getByDisplayValue(""), { key: "Backspace" });
-
     expect(fetch).toHaveBeenCalledWith(
       "/api/blocks/b2",
       expect.objectContaining({ method: "DELETE" })
     );
   });
+
+  // — TODO blocks —
 
   it("renders a TODO block with a checkbox", () => {
     render(
@@ -270,6 +354,8 @@ describe("BlockEditor", () => {
     );
   });
 
+  // — CODE blocks —
+
   it("renders a CODE block with a language input and code textarea", () => {
     render(
       <BlockEditor
@@ -301,14 +387,14 @@ describe("BlockEditor", () => {
         blocks={[block({ id: "c1", type: "CODE", content: { text: "code" } })]}
       />
     );
-    const textarea = screen.getByDisplayValue("code");
+    const textarea = screen.getByDisplayValue("code") as HTMLTextAreaElement;
     Object.defineProperty(textarea, "selectionStart", { get: () => 0, configurable: true });
     Object.defineProperty(textarea, "selectionEnd", { get: () => 0, configurable: true });
     fireEvent.keyDown(textarea, { key: "Tab" });
     expect(textarea.value).toBe("  code");
   });
 
-  it("pressing Escape in a CODE block creates a new TEXT block below", () => {
+  it("pressing Escape in a CODE block blurs without creating a new block", () => {
     render(
       <BlockEditor
         pageId="page-1"
@@ -318,8 +404,10 @@ describe("BlockEditor", () => {
     const codeTextarea = screen.getByDisplayValue("const x = 1;");
     const countBefore = screen.getAllByRole("textbox").length;
     fireEvent.keyDown(codeTextarea, { key: "Escape" });
-    expect(screen.getAllByRole("textbox")).toHaveLength(countBefore + 1);
+    expect(screen.getAllByRole("textbox")).toHaveLength(countBefore);
   });
+
+  // — Slash menu —
 
   it("typing '/' opens the slash menu", () => {
     render(
@@ -372,6 +460,22 @@ describe("BlockEditor", () => {
     expect(items[1]).toHaveAttribute("aria-selected", "true");
   });
 
+  it("pressing Enter when slash menu is open selects the active item and closes the menu", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ type: "TEXT", content: { text: "" } })]}
+      />
+    );
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "/head" } });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toHaveValue("");
+  });
+
+  // — List blocks —
+
   it("renders a BULLET_LIST block with a bullet prefix", () => {
     render(
       <BlockEditor
@@ -420,7 +524,7 @@ describe("BlockEditor", () => {
     expect(screen.getByText("2.")).toBeInTheDocument();
   });
 
-  it("renders a QUOTE block with a textarea and italic styling", () => {
+  it("renders a QUOTE block with italic styling", () => {
     render(
       <BlockEditor
         pageId="page-1"
@@ -431,7 +535,7 @@ describe("BlockEditor", () => {
     expect(screen.getByRole("textbox")).toHaveClass("italic");
   });
 
-  it("pressing Enter on a QUOTE block creates a new TEXT block (not another QUOTE)", () => {
+  it("pressing Enter on a QUOTE block creates a TEXT block (not another QUOTE)", () => {
     render(
       <BlockEditor
         pageId="page-1"
@@ -456,19 +560,7 @@ describe("BlockEditor", () => {
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
-  it("pressing Enter when slash menu is open selects the active item and closes the menu", () => {
-    render(
-      <BlockEditor
-        pageId="page-1"
-        blocks={[block({ type: "TEXT", content: { text: "" } })]}
-      />
-    );
-    const textarea = screen.getByRole("textbox");
-    fireEvent.change(textarea, { target: { value: "/head" } });
-    fireEvent.keyDown(textarea, { key: "Enter" });
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveValue("");
-  });
+  // — Reorder —
 
   it("calls PATCH with the new order for all non-pending blocks after reorder", () => {
     const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
@@ -484,7 +576,6 @@ describe("BlockEditor", () => {
       />
     );
 
-    // trigger-reorder reverses the sorted array: [b1, b2] → [b2, b1]
     fireEvent.click(screen.getByTestId("trigger-reorder"));
 
     expect(mockFetch).toHaveBeenCalledWith(
@@ -519,5 +610,78 @@ describe("BlockEditor", () => {
     const textareas = screen.getAllByRole("textbox");
     expect(textareas[0]).toHaveValue("Second");
     expect(textareas[1]).toHaveValue("First");
+  });
+
+  // — Mobile move up/down —
+
+  it("renders move-up and move-down buttons for each block", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[block({ id: "b1", type: "TEXT", content: { text: "Hello" } })]}
+      />
+    );
+    expect(screen.getByRole("button", { name: /move block up/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /move block down/i })).toBeInTheDocument();
+  });
+
+  it("clicking move up swaps the block with the one above it", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[
+          block({ id: "b1", type: "TEXT", content: { text: "First" }, order: 0 }),
+          block({ id: "b2", type: "TEXT", content: { text: "Second" }, order: 1 }),
+        ]}
+      />
+    );
+    const moveUpButtons = screen.getAllByRole("button", { name: /move block up/i });
+    fireEvent.click(moveUpButtons[1]); // move "Second" up
+    const textareas = screen.getAllByRole("textbox");
+    expect(textareas[0]).toHaveValue("Second");
+    expect(textareas[1]).toHaveValue("First");
+  });
+
+  it("clicking move down swaps the block with the one below it", () => {
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[
+          block({ id: "b1", type: "TEXT", content: { text: "First" }, order: 0 }),
+          block({ id: "b2", type: "TEXT", content: { text: "Second" }, order: 1 }),
+        ]}
+      />
+    );
+    const moveDownButtons = screen.getAllByRole("button", { name: /move block down/i });
+    fireEvent.click(moveDownButtons[0]); // move "First" down
+    const textareas = screen.getAllByRole("textbox");
+    expect(textareas[0]).toHaveValue("Second");
+    expect(textareas[1]).toHaveValue("First");
+  });
+
+  it("move up calls PATCH for both swapped blocks with new orders", () => {
+    const mockFetch = vi.fn().mockResolvedValue({ json: async () => ({}) });
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(
+      <BlockEditor
+        pageId="page-1"
+        blocks={[
+          block({ id: "b1", type: "TEXT", content: { text: "First" }, order: 0 }),
+          block({ id: "b2", type: "TEXT", content: { text: "Second" }, order: 1 }),
+        ]}
+      />
+    );
+    const moveUpButtons = screen.getAllByRole("button", { name: /move block up/i });
+    fireEvent.click(moveUpButtons[1]);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/blocks/b2",
+      expect.objectContaining({ method: "PATCH", body: expect.stringContaining('"order":0') })
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/blocks/b1",
+      expect.objectContaining({ method: "PATCH", body: expect.stringContaining('"order":1') })
+    );
   });
 });
