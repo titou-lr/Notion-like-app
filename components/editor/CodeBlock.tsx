@@ -33,7 +33,7 @@ export function CodeBlock({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-surface px-4 py-3">
+    <div className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-md px-4 py-3">
       <input
         type="text"
         value={language}
@@ -49,7 +49,7 @@ export function CodeBlock({
           onKeyDown={(e) => onKeyDown(blockId, e)}
           placeholder="// Write your code here…"
           rows={1}
-          className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-text-primary outline-none"
+          className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-[1.6] text-text-primary outline-none"
         />
         {slashFilter !== null && (
           <SlashMenu

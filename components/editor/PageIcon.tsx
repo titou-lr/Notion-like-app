@@ -31,7 +31,7 @@ export function PageIcon({ pageId, initialIcon }: PageIconProps) {
       <button
         onClick={() => setPickerOpen((prev) => !prev)}
         aria-label="Set page icon"
-        className="group flex items-center justify-center w-16 h-16 rounded-lg hover:bg-surface-hover transition-colors duration-150"
+        className="group flex items-center justify-center w-16 h-16 rounded-2xl hover:bg-white/[0.08] transition-all duration-150"
       >
         {icon ? (
           <span className="text-5xl leading-none select-none">{icon}</span>

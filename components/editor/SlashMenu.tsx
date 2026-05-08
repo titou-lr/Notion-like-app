@@ -38,7 +38,7 @@ export function SlashMenu({ filter, activeIndex, onSelect }: SlashMenuProps) {
 
   return (
     <div
-      className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-surface shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+      className="absolute left-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl glass shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
     >
       {items.length === 0 ? (
         <p className="px-3 py-2 text-sm text-text-secondary">No results</p>
@@ -49,8 +49,8 @@ export function SlashMenu({ filter, activeIndex, onSelect }: SlashMenuProps) {
               key={item.type}
               role="option"
               aria-selected={i === activeIndex}
-              className={`flex cursor-pointer flex-col px-3 py-3 md:py-2 transition-colors duration-150 ${
-                i === activeIndex ? "bg-surface-hover" : "hover:bg-surface-hover"
+              className={`flex cursor-pointer flex-col px-3 py-3 md:py-2 transition-all duration-150 ${
+                i === activeIndex ? "bg-white/[0.13]" : "hover:bg-white/[0.08]"
               }`}
               onPointerDown={(e) => e.preventDefault()}
               onClick={() => onSelect(item.type)}

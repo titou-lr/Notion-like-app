@@ -103,7 +103,7 @@ export default function SignupPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
-            className="bg-surface border-border text-text-primary placeholder:text-text-disabled focus-visible:ring-1 focus-visible:ring-border-strong focus-visible:ring-offset-0"
+            className="rounded-xl bg-white/[0.06] border-white/[0.15] text-text-primary placeholder:text-text-disabled focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-0 backdrop-blur-sm h-10 transition-all duration-150"
           />
           {fieldErrors.email && (
             <p className="text-xs text-destructive">{fieldErrors.email}</p>
@@ -121,7 +121,7 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             autoComplete="new-password"
-            className="bg-surface border-border text-text-primary placeholder:text-text-disabled focus-visible:ring-1 focus-visible:ring-border-strong focus-visible:ring-offset-0"
+            className="rounded-xl bg-white/[0.06] border-white/[0.15] text-text-primary placeholder:text-text-disabled focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-0 backdrop-blur-sm h-10 transition-all duration-150"
           />
           {fieldErrors.password && (
             <p className="text-xs text-destructive">{fieldErrors.password}</p>
@@ -137,7 +137,7 @@ export default function SignupPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-accent text-background hover:bg-accent-muted transition-colors duration-150"
+          className="w-full rounded-xl bg-white/[0.15] border border-white/[0.25] text-text-primary font-medium hover:bg-white/[0.25] hover:border-white/[0.35] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] h-10"
         >
           {loading ? "Creating account…" : "Create account"}
         </Button>

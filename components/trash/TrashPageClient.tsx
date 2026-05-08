@@ -36,8 +36,8 @@ export function TrashPageClient({ pages: initialPages }: TrashPageClientProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-16 py-16">
-      <h1 className="text-2xl font-semibold text-text-primary mb-1">Trash</h1>
+    <div className="max-w-2xl mx-auto px-4 py-10 md:px-12 md:py-16">
+      <h1 className="text-2xl font-semibold text-text-primary mb-1 tracking-tight">Trash</h1>
       <p className="text-sm text-text-secondary mb-8">
         Pages in trash are not visible in the sidebar.
       </p>
@@ -48,7 +48,7 @@ export function TrashPageClient({ pages: initialPages }: TrashPageClientProps) {
           <p className="text-text-secondary text-sm">Your trash is empty</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col gap-2">
           {pages.map((page) => (
             <motion.li
               key={page.id}
@@ -57,7 +57,7 @@ export function TrashPageClient({ pages: initialPages }: TrashPageClientProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-sm bg-surface border border-border hover:border-border-strong transition-colors duration-150"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/[0.1] bg-white/[0.06] backdrop-blur-md hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-150"
             >
               <span className="flex-none text-lg leading-none">
                 {page.icon ?? <FileText size={16} className="text-text-disabled" />}
@@ -69,7 +69,7 @@ export function TrashPageClient({ pages: initialPages }: TrashPageClientProps) {
                 <button
                   onClick={() => handleRestore(page.id)}
                   aria-label={`restore ${page.title || "Untitled"}`}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded transition-colors duration-150"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-white/[0.1] rounded-lg transition-all duration-150"
                 >
                   <RotateCcw size={11} />
                   Restore
@@ -77,7 +77,7 @@ export function TrashPageClient({ pages: initialPages }: TrashPageClientProps) {
                 <button
                   onClick={() => handlePermanentDelete(page.id)}
                   aria-label={`permanently delete ${page.title || "Untitled"}`}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-text-disabled hover:text-destructive hover:bg-surface-hover rounded transition-colors duration-150"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-disabled hover:text-destructive hover:bg-white/[0.08] rounded-lg transition-all duration-150"
                 >
                   <Trash2 size={11} />
                   Delete forever

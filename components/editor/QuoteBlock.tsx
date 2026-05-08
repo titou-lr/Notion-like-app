@@ -29,7 +29,7 @@ export function QuoteBlock({
   };
 
   return (
-    <div className="border-l-2 border-accent pl-4">
+    <div className="border-l-2 border-white/40 pl-4">
       <div className="relative">
         <textarea
           ref={(el) => onRef(blockId, el)}
@@ -38,7 +38,7 @@ export function QuoteBlock({
           onKeyDown={(e) => onKeyDown(blockId, e)}
           placeholder="Quote…"
           rows={1}
-          className="w-full resize-none overflow-hidden bg-transparent text-base italic leading-relaxed text-text-secondary outline-none"
+          className="w-full resize-none overflow-hidden bg-transparent text-base italic leading-[1.6] text-text-secondary outline-none"
         />
         {slashFilter !== null && (
           <SlashMenu

@@ -24,9 +24,9 @@ export default async function PageView({ params }: PageProps) {
   const blocks = (page.blocks ?? []) as Block[];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 md:px-16 md:py-16">
+    <div className="max-w-3xl mx-auto px-4 py-10 md:px-12 md:py-16">
       <PageIcon pageId={params.id} initialIcon={page.icon ?? null} />
-      <h1 className="text-4xl font-bold text-text-primary mb-8">
+      <h1 className="text-4xl font-bold text-text-primary mb-8 tracking-tight">
         {page.title || "Untitled"}
       </h1>
       <BlockEditor pageId={params.id} blocks={blocks} />

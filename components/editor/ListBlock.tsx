@@ -45,7 +45,7 @@ export function ListBlock({
           onKeyDown={(e) => onKeyDown(blockId, e)}
           placeholder="List item…"
           rows={1}
-          className="w-full resize-none overflow-hidden bg-transparent text-base leading-relaxed text-text-primary outline-none"
+          className="w-full resize-none overflow-hidden bg-transparent text-base leading-[1.6] text-text-primary outline-none"
         />
         {slashFilter !== null && (
           <SlashMenu

@@ -48,7 +48,7 @@ export function TodoBlock({
           onKeyDown={(e) => onKeyDown(blockId, e)}
           placeholder="To-do…"
           rows={1}
-          className={`w-full resize-none overflow-hidden bg-transparent text-base leading-relaxed outline-none ${
+          className={`w-full resize-none overflow-hidden bg-transparent text-base leading-[1.6] outline-none ${
             checked ? "text-text-secondary line-through" : "text-text-primary"
           }`}
         />

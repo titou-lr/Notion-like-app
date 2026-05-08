@@ -60,8 +60,6 @@ function DraggableItem({
   onSave,
   onFocusBlock,
   onBlurBlock,
-  onMoveUp,
-  onMoveDown,
   children,
 }: {
   block: LocalBlock;
@@ -69,11 +67,10 @@ function DraggableItem({
   onSave: () => void;
   onFocusBlock: () => void;
   onBlurBlock: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
   children: React.ReactNode;
 }) {
   const controls = useDragControls();
+  const [isLifted, setIsLifted] = useState(false);
   return (
     <Reorder.Item
       value={block}
@@ -81,15 +78,20 @@ function DraggableItem({
       dragControls={controls}
       as="div"
       className="outline-none"
+      style={{ position: "relative", zIndex: isLifted ? 10 : undefined }}
+      onDragEnd={() => setIsLifted(false)}
+      transition={{ type: "spring", stiffness: 350, damping: 28 }}
     >
       <BlockWrapper
-        onDragHandlePointerDown={(e) => controls.start(e)}
+        onActivateDrag={(e) => {
+          setIsLifted(true);
+          controls.start(e);
+        }}
+        isLifted={isLifted}
         showSaveButton={showSaveButton}
         onSave={onSave}
         onFocusBlock={onFocusBlock}
         onBlurBlock={onBlurBlock}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
       >
         {children}
       </BlockWrapper>
@@ -183,70 +185,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
         });
       }
     });
-  };
-
-  const handleMoveUp = (blockId: string) => {
-    const sorted = [...blocksRef.current].sort((a, b) => a.order - b.order);
-    const idx = sorted.findIndex((b) => b.id === blockId);
-    if (idx <= 0) return;
-
-    const above = sorted[idx - 1];
-    const current = sorted[idx];
-
-    setBlocks((prev) =>
-      prev.map((b) => {
-        if (b.id === current.id) return { ...b, order: above.order };
-        if (b.id === above.id) return { ...b, order: current.order };
-        return b;
-      })
-    );
-
-    if (!current.isPending) {
-      void fetch(`/api/blocks/${current.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: current.content, order: above.order }),
-      });
-    }
-    if (!above.isPending) {
-      void fetch(`/api/blocks/${above.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: above.content, order: current.order }),
-      });
-    }
-  };
-
-  const handleMoveDown = (blockId: string) => {
-    const sorted = [...blocksRef.current].sort((a, b) => a.order - b.order);
-    const idx = sorted.findIndex((b) => b.id === blockId);
-    if (idx >= sorted.length - 1) return;
-
-    const below = sorted[idx + 1];
-    const current = sorted[idx];
-
-    setBlocks((prev) =>
-      prev.map((b) => {
-        if (b.id === current.id) return { ...b, order: below.order };
-        if (b.id === below.id) return { ...b, order: current.order };
-        return b;
-      })
-    );
-
-    if (!current.isPending) {
-      void fetch(`/api/blocks/${current.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: current.content, order: below.order }),
-      });
-    }
-    if (!below.isPending) {
-      void fetch(`/api/blocks/${below.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: below.content, order: current.order }),
-      });
-    }
   };
 
   const handleChange = (blockId: string, text: string) => {
@@ -481,8 +419,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
               onSave={() => {}}
               onFocusBlock={() => handleFocus(block.id)}
               onBlurBlock={() => handleBlur(block.id)}
-              onMoveUp={() => handleMoveUp(block.id)}
-              onMoveDown={() => handleMoveDown(block.id)}
             >
               <DividerBlock
                 onEnter={() => {
@@ -513,8 +449,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
               onSave={() => void saveBlock(block.id)}
               onFocusBlock={() => handleFocus(block.id)}
               onBlurBlock={() => handleBlur(block.id)}
-              onMoveUp={() => handleMoveUp(block.id)}
-              onMoveDown={() => handleMoveDown(block.id)}
             >
               <ListBlock
                 blockId={block.id}
@@ -541,8 +475,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
               onSave={() => void saveBlock(block.id)}
               onFocusBlock={() => handleFocus(block.id)}
               onBlurBlock={() => handleBlur(block.id)}
-              onMoveUp={() => handleMoveUp(block.id)}
-              onMoveDown={() => handleMoveDown(block.id)}
             >
               <CodeBlock
                 blockId={block.id}
@@ -569,8 +501,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
               onSave={() => void saveBlock(block.id)}
               onFocusBlock={() => handleFocus(block.id)}
               onBlurBlock={() => handleBlur(block.id)}
-              onMoveUp={() => handleMoveUp(block.id)}
-              onMoveDown={() => handleMoveDown(block.id)}
             >
               <QuoteBlock
                 blockId={block.id}
@@ -595,8 +525,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
               onSave={() => void saveBlock(block.id)}
               onFocusBlock={() => handleFocus(block.id)}
               onBlurBlock={() => handleBlur(block.id)}
-              onMoveUp={() => handleMoveUp(block.id)}
-              onMoveDown={() => handleMoveDown(block.id)}
             >
               <TodoBlock
                 blockId={block.id}
@@ -622,8 +550,6 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
             onSave={() => void saveBlock(block.id)}
             onFocusBlock={() => handleFocus(block.id)}
             onBlurBlock={() => handleBlur(block.id)}
-            onMoveUp={() => handleMoveUp(block.id)}
-            onMoveDown={() => handleMoveDown(block.id)}
           >
             <EditableBlock
               block={block}
@@ -642,9 +568,9 @@ export function BlockEditor({ pageId, blocks: initialBlocks }: BlockEditorProps)
 }
 
 const HEADING_CLASS: Partial<Record<BlockType, string>> = {
-  HEADING_1: "text-3xl font-bold",
-  HEADING_2: "text-2xl font-semibold",
-  HEADING_3: "text-xl font-semibold",
+  HEADING_1: "text-[2rem] font-semibold tracking-[-0.02em] leading-[1.3]",
+  HEADING_2: "text-[1.5rem] font-semibold leading-[1.3]",
+  HEADING_3: "text-[1.25rem] font-medium leading-[1.3]",
 };
 
 function EditableBlock({
@@ -665,7 +591,7 @@ function EditableBlock({
   onSlashSelect: (type: BlockType) => void;
 }) {
   const text = (block.content.text as string | undefined) ?? "";
-  const typeClass = HEADING_CLASS[block.type] ?? "text-base leading-relaxed";
+  const typeClass = HEADING_CLASS[block.type] ?? "text-base leading-[1.6]";
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     e.target.style.height = "0";

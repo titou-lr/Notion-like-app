@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,8 @@ interface PageTreeItemProps {
 
 export function PageTreeItem({ page, depth }: PageTreeItemProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isActive = pathname === `/page/${page.id}`;
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,7 +46,10 @@ export function PageTreeItem({ page, depth }: PageTreeItemProps) {
   return (
     <div>
       <div
-        className="group flex items-center mx-1 rounded-sm hover:bg-surface-hover transition-colors duration-150"
+        className={cn(
+          "group flex items-center mx-1 rounded-xl transition-all duration-150",
+          isActive ? "bg-white/[0.1]" : "hover:bg-white/[0.08]"
+        )}
         style={{ paddingLeft: `${depth * 12}px` }}
       >
         {hasChildren ? (
@@ -68,7 +73,12 @@ export function PageTreeItem({ page, depth }: PageTreeItemProps) {
 
         <Link
           href={`/page/${page.id}`}
-          className="flex-1 flex items-center gap-1.5 px-1 py-1.5 text-sm text-text-secondary hover:text-text-primary truncate min-w-0"
+          className={cn(
+            "flex-1 flex items-center gap-1.5 px-1 py-1.5 text-[0.875rem] truncate min-w-0 transition-colors duration-150",
+            isActive
+              ? "text-white font-semibold"
+              : "text-white/70 font-medium hover:text-white"
+          )}
         >
           {page.icon && (
             <span className="flex-none text-sm leading-none">{page.icon}</span>

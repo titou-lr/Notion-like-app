@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import type { SidebarPage } from "@/types";
 import { PageTreeItem } from "./PageTreeItem";
+import { SettingsMenu } from "./SettingsMenu";
 
 interface SidebarProps {
   pages: SidebarPage[];
@@ -26,13 +27,13 @@ export function Sidebar({ pages }: SidebarProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center h-11 px-3 shrink-0">
+      <div className="flex items-center h-12 px-4 shrink-0 border-b border-white/10">
         <span className="font-semibold text-sm tracking-tight text-text-primary">
-          Notion
+          Pages
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-1">
+      <div className="flex-1 overflow-y-auto py-2 px-2">
         {pages.length === 0 ? (
           <p className="px-3 py-2 text-xs text-text-disabled">No pages yet</p>
         ) : (
@@ -44,10 +45,11 @@ export function Sidebar({ pages }: SidebarProps) {
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border pt-1 pb-2 px-2 flex flex-col gap-0.5">
+      <div className="shrink-0 border-t border-white/10 pt-2 pb-3 px-2 flex flex-col gap-1">
+        <SettingsMenu />
         <Link
           href="/trash"
-          className="flex items-center gap-2 px-3 py-1.5 text-xs text-text-disabled hover:text-text-secondary hover:bg-surface-hover rounded-sm transition-colors duration-150"
+          className="flex items-center gap-2 px-3 py-2 text-xs text-text-disabled hover:text-text-secondary rounded-xl hover:bg-white/[0.08] transition-all duration-150"
         >
           <Trash2 size={12} />
           Trash
@@ -56,7 +58,7 @@ export function Sidebar({ pages }: SidebarProps) {
           aria-label="New page"
           disabled={isCreating}
           onClick={handleNewPage}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary rounded-sm transition-colors duration-150 disabled:opacity-50"
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary rounded-xl hover:bg-white/[0.08] transition-all duration-150 disabled:opacity-40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
         >
           <span className="text-base leading-none">+</span>
           {isCreating ? "Creating…" : "New page"}
