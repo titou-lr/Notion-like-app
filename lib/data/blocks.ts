@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma/client";
+import { Prisma } from "@prisma/client";
 import type { BlockType } from "@/types";
 
 export async function updateBlock(
@@ -10,7 +11,7 @@ export async function updateBlock(
   return prisma.block.update({
     where: { id: blockId },
     data: {
-      content,
+      content: content as Prisma.InputJsonValue,
       ...(type ? { type } : {}),
       ...(order !== undefined ? { order } : {}),
     },
@@ -29,7 +30,7 @@ export async function createBlock(
   order: number
 ) {
   return prisma.block.create({
-    data: { pageId, type, content, order },
+    data: { pageId, type, content: content as Prisma.InputJsonValue, order },
     select: { id: true, type: true, content: true, order: true },
   });
 }
