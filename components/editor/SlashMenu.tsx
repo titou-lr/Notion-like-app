@@ -48,6 +48,7 @@ export function SlashMenu({ filter, activeIndex, onSelect }: SlashMenuProps) {
             <li
               key={item.type}
               role="option"
+              aria-selected={i === activeIndex}
               className={`flex cursor-pointer flex-col px-3 py-2 transition-colors duration-150 ${
                 i === activeIndex ? "bg-surface-hover" : "hover:bg-surface-hover"
               }`}

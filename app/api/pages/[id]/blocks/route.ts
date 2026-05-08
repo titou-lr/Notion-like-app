@@ -6,7 +6,7 @@ import type { BlockType } from "@/types";
 
 const postSchema = z.object({
   type: z.string(),
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
   order: z.number(),
 });
 
