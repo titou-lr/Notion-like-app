@@ -18,6 +18,7 @@ model User {
   pages         Page[]
   reminders     Reminder[]
   reminderLists ReminderList[]
+  events        Event[]
   createdAt     DateTime       @default(now())
 }
 
@@ -91,4 +92,21 @@ enum BlockType {
   DIVIDER
   QUOTE
   TODO
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  color       String?
+  category    String?
+  isRecurring Boolean  @default(false)
+  recurrence  String?
+  sourceLabel String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -35,6 +35,32 @@ export interface SearchResult {
 
 export type Priority = "LOW" | "NORMAL" | "HIGH";
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  startAt: string;
+  endAt: string;
+  color: string | null;
+  category: string | null;
+  isRecurring: boolean;
+  recurrence: string | null;
+  sourceLabel: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEventData {
+  title: string;
+  description?: string;
+  startAt: string;
+  endAt: string;
+  color?: string;
+  category?: string;
+  isRecurring?: boolean;
+  recurrence?: string;
+}
+
 export interface ReminderListItem {
   id: string;
   name: string;

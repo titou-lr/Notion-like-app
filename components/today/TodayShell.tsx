@@ -5,16 +5,8 @@ import { motion } from "framer-motion";
 import { filterOverdue, filterToday } from "@/lib/today";
 import { TodayReminderRow } from "./TodayReminderRow";
 import { TodayNoteRow } from "./TodayNoteRow";
-import type { ReminderItem } from "@/types";
-
-// Minimal shape — expand when Calendar module is built
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  startAt: string;
-  endAt: string;
-  color: string | null;
-}
+import { TodayEventRow } from "./TodayEventRow";
+import type { ReminderItem, CalendarEvent } from "@/types";
 
 interface RecentPage {
   id: string;
@@ -98,12 +90,9 @@ export function TodayShell({
           <h2 className="text-base font-semibold text-text-primary mb-3 px-1">Schedule</h2>
           <SectionCard>
             {events.length > 0 ? (
-              /* Placeholder list — replace with EventRow components when Calendar is built */
-              <div className="flex flex-col gap-1 p-1">
+              <div className="flex flex-col gap-0.5 p-1">
                 {events.map((e) => (
-                  <div key={e.id} className="px-3 py-3 text-sm text-text-primary">
-                    {e.title}
-                  </div>
+                  <TodayEventRow key={e.id} event={e} />
                 ))}
               </div>
             ) : (
