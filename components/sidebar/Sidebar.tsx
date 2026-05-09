@@ -1,29 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2, Search } from "lucide-react";
 import type { SidebarPage } from "@/types";
+import { usePages } from "@/hooks/usePages";
 import { PageTreeItem } from "./PageTreeItem";
 import { SettingsMenu } from "./SettingsMenu";
+import { SidebarSkeleton } from "@/components/shared/SkeletonLoader";
 
 interface SidebarProps {
   pages: SidebarPage[];
   onOpenSearch: () => void;
 }
 
-export function Sidebar({ pages, onOpenSearch }: SidebarProps) {
+export function Sidebar({ pages: initialPages, onOpenSearch }: SidebarProps) {
   const router = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
+  const { query, createPage } = usePages(initialPages);
+
+  const pages = query.data ?? initialPages;
+  const isCreating = createPage.isPending;
 
   const handleNewPage = async () => {
-    setIsCreating(true);
-    const res = await fetch("/api/pages", { method: "POST" });
-    const { data } = await res.json();
-    router.push(`/page/${data.id}`);
-    router.refresh();
-    setIsCreating(false);
+    const result = await createPage.mutateAsync(undefined);
+    router.push(`/page/${result.id}`);
   };
 
   return (
@@ -43,7 +43,9 @@ export function Sidebar({ pages, onOpenSearch }: SidebarProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 px-2">
-        {pages.length === 0 ? (
+        {query.isLoading ? (
+          <SidebarSkeleton />
+        ) : pages.length === 0 ? (
           <p className="px-3 py-2 text-xs text-text-disabled">No pages yet</p>
         ) : (
           <nav>

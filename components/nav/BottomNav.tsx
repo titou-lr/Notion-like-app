@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Home, FileText, Bell, CalendarDays } from "lucide-react";
 
 const TABS = [
@@ -40,6 +41,23 @@ function useActiveTab() {
 /** Fixed bottom bar — mobile only (hidden on md+). */
 export function BottomNav() {
   const isActive = useActiveTab();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const handleTouchStart = (href: string) => {
+    router.prefetch(href);
+    if (href === "/reminders") {
+      queryClient.prefetchQuery({
+        queryKey: ["reminders", "all"],
+        queryFn: async () => {
+          const res = await fetch("/api/reminders");
+          const { data } = await res.json();
+          return data ?? [];
+        },
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  };
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center glass border-t border-white/10 h-16">
@@ -49,6 +67,7 @@ export function BottomNav() {
           <Link
             key={href}
             href={href}
+            onTouchStart={() => handleTouchStart(href)}
             className={`flex flex-col items-center gap-0.5 flex-1 py-2 min-h-[44px] justify-center transition-all duration-150 ${
               active ? "text-white" : "text-text-disabled"
             }`}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import type { SidebarPage } from "@/types";
 
@@ -16,11 +17,16 @@ interface PageTreeItemProps {
 export function PageTreeItem({ page, depth }: PageTreeItemProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const isActive = pathname === `/page/${page.id}`;
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const hasChildren = page.children.length > 0;
+
+  const handleTouchStart = () => {
+    router.prefetch(`/page/${page.id}`);
+  };
 
   const handleCreateChild = async () => {
     setIsCreating(true);
@@ -32,14 +38,14 @@ export function PageTreeItem({ page, depth }: PageTreeItemProps) {
     const { data } = await res.json();
     setIsExpanded(true);
     router.push(`/page/${data.id}`);
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ["pages"] });
     setIsCreating(false);
   };
 
   const handleDelete = async () => {
     setIsDeleting(true);
     await fetch(`/api/pages/${page.id}`, { method: "DELETE" });
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ["pages"] });
     setIsDeleting(false);
   };
 
@@ -73,6 +79,7 @@ export function PageTreeItem({ page, depth }: PageTreeItemProps) {
 
         <Link
           href={`/page/${page.id}`}
+          onTouchStart={handleTouchStart}
           className={cn(
             "flex-1 flex items-center gap-1.5 px-1 py-1.5 text-[0.875rem] truncate min-w-0 transition-colors duration-150",
             isActive

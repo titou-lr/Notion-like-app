@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Plus, X } from "lucide-react";
 import { RemindersSidebar } from "./RemindersSidebar";
 import { RemindersList } from "./RemindersList";
 import { NewReminderModal } from "./NewReminderModal";
-import type {
-  ReminderItem,
-  ReminderListItem,
-  CreateReminderData,
-} from "@/types";
+import { useReminders } from "@/hooks/useReminders";
+import type { ReminderListItem, CreateReminderData } from "@/types";
 
 interface RemindersShellProps {
   initialLists: ReminderListItem[];
@@ -19,80 +16,35 @@ interface RemindersShellProps {
 export function RemindersShell({ initialLists }: RemindersShellProps) {
   const [lists, setLists] = useState<ReminderListItem[]>(initialLists);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  const [reminders, setReminders] = useState<ReminderItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const fetchReminders = useCallback(async (filter: string) => {
-    setLoading(true);
-    try {
-      const qs =
-        filter === "today"
-          ? "filter=today"
-          : filter !== "all"
-          ? `listId=${filter}`
-          : "";
-      const res = await fetch(`/api/reminders${qs ? `?${qs}` : ""}`);
-      const { data } = await res.json();
-      setReminders(data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { query, toggleDone, deleteReminder, createReminder, updateReminder } =
+    useReminders(selectedFilter);
 
-  useEffect(() => {
-    fetchReminders(selectedFilter);
-  }, [selectedFilter, fetchReminders]);
+  const reminders = query.data ?? [];
+  const loading = query.isLoading;
 
-  const handleToggleDone = useCallback((id: string, isDone: boolean) => {
-    // Optimistic update
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, isDone } : r)));
-    fetch(`/api/reminders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isDone }),
-    }).catch(() => {
-      // Roll back on error
-      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, isDone: !isDone } : r)));
-    });
-  }, []);
+  const handleToggleDone = (id: string, isDone: boolean) => {
+    toggleDone.mutate({ id, isDone });
+  };
 
-  const handleDelete = useCallback(
-    (id: string) => {
-      setReminders((prev) => prev.filter((r) => r.id !== id));
-      fetch(`/api/reminders/${id}`, { method: "DELETE" }).catch(() => {
-        fetchReminders(selectedFilter);
-      });
-    },
-    [fetchReminders, selectedFilter]
-  );
+  const handleDelete = (id: string) => {
+    deleteReminder.mutate(id);
+  };
 
-  const handleUpdate = useCallback(
-    (id: string, data: Partial<Pick<ReminderItem, "title" | "description">>) => {
-      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)));
-      fetch(`/api/reminders/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).catch(() => fetchReminders(selectedFilter));
-    },
-    [fetchReminders, selectedFilter]
-  );
+  const handleUpdate = (
+    id: string,
+    data: Partial<Pick<(typeof reminders)[0], "title" | "description">>
+  ) => {
+    updateReminder.mutate({ id, ...data });
+  };
 
-  const handleCreate = useCallback(
-    async (data: CreateReminderData) => {
-      await fetch("/api/reminders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      await fetchReminders(selectedFilter);
-    },
-    [fetchReminders, selectedFilter]
-  );
+  const handleCreate = async (data: CreateReminderData) => {
+    await createReminder.mutateAsync(data);
+  };
 
-  const handleNewList = useCallback(async (name: string) => {
+  const handleNewList = async (name: string) => {
     const res = await fetch("/api/reminder-lists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,18 +52,18 @@ export function RemindersShell({ initialLists }: RemindersShellProps) {
     });
     const { data } = await res.json();
     if (data) {
-      setLists((prev) => [...prev, { ...data, createdAt: data.createdAt ?? new Date().toISOString() }]);
+      setLists((prev) => [
+        ...prev,
+        { ...data, createdAt: data.createdAt ?? new Date().toISOString() },
+      ]);
     }
-  }, []);
+  };
 
-  const handleDeleteList = useCallback(
-    async (id: string) => {
-      await fetch(`/api/reminder-lists/${id}`, { method: "DELETE" });
-      setLists((prev) => prev.filter((l) => l.id !== id));
-      if (selectedFilter === id) setSelectedFilter("all");
-    },
-    [selectedFilter]
-  );
+  const handleDeleteList = async (id: string) => {
+    await fetch(`/api/reminder-lists/${id}`, { method: "DELETE" });
+    setLists((prev) => prev.filter((l) => l.id !== id));
+    if (selectedFilter === id) setSelectedFilter("all");
+  };
 
   const filterLabel =
     selectedFilter === "all"

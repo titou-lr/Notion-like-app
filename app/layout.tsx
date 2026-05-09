@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { WallpaperInit } from "@/components/shared/WallpaperInit";
+import { QueryProvider } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="antialiased">
         <WallpaperInit />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );

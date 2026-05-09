@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { ReminderItem } from "./ReminderItem";
+import { RemindersListSkeleton } from "@/components/shared/SkeletonLoader";
 import type { ReminderItem as ReminderItemType } from "@/types";
 
 interface RemindersListProps {
@@ -41,9 +42,7 @@ export function RemindersList({
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-text-disabled text-sm">
-          Loading…
-        </div>
+        <RemindersListSkeleton />
       ) : reminders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-text-disabled">
           <span className="text-3xl select-none">⏰</span>
