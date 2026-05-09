@@ -10,6 +10,7 @@ const mockRefresh = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
+  usePathname: vi.fn(() => "/"),
 }));
 
 vi.mock("next/link", () => ({
@@ -58,29 +59,29 @@ describe("Sidebar", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the app name", () => {
-    render(<Sidebar pages={[]} />);
-    expect(screen.getByText("Notion")).toBeInTheDocument();
+  it("renders the section header", () => {
+    render(<Sidebar pages={[]} onOpenSearch={vi.fn()} />);
+    expect(screen.getByText("Pages")).toBeInTheDocument();
   });
 
   it("renders a New Page button", () => {
-    render(<Sidebar pages={[]} />);
+    render(<Sidebar pages={[]} onOpenSearch={vi.fn()} />);
     expect(screen.getByRole("button", { name: /new page/i })).toBeInTheDocument();
   });
 
   it("renders page titles", () => {
-    render(<Sidebar pages={mockPages} />);
+    render(<Sidebar pages={mockPages} onOpenSearch={vi.fn()} />);
     expect(screen.getByText("Getting Started")).toBeInTheDocument();
     expect(screen.getByText("Ideas")).toBeInTheDocument();
   });
 
   it("shows empty state when no pages exist", () => {
-    render(<Sidebar pages={[]} />);
+    render(<Sidebar pages={[]} onOpenSearch={vi.fn()} />);
     expect(screen.getByText(/no pages/i)).toBeInTheDocument();
   });
 
   it("links each page to its route", () => {
-    render(<Sidebar pages={mockPages} />);
+    render(<Sidebar pages={mockPages} onOpenSearch={vi.fn()} />);
     expect(screen.getByRole("link", { name: "Getting Started" })).toHaveAttribute(
       "href",
       "/page/1"
@@ -88,12 +89,12 @@ describe("Sidebar", () => {
   });
 
   it("shows 'Untitled' for pages with no title", () => {
-    render(<Sidebar pages={[{ id: "3", title: "", icon: null, parentId: null, children: [] }]} />);
+    render(<Sidebar pages={[{ id: "3", title: "", icon: null, parentId: null, children: [] }]} onOpenSearch={vi.fn()} />);
     expect(screen.getByText("Untitled")).toBeInTheDocument();
   });
 
   it("renders a Trash link", () => {
-    render(<Sidebar pages={[]} />);
+    render(<Sidebar pages={[]} onOpenSearch={vi.fn()} />);
     expect(screen.getByRole("link", { name: /trash/i })).toHaveAttribute("href", "/trash");
   });
 
@@ -102,7 +103,7 @@ describe("Sidebar", () => {
       json: async () => ({ data: { id: "new-page-id", title: "Untitled" } }),
     }));
 
-    render(<Sidebar pages={[]} />);
+    render(<Sidebar pages={[]} onOpenSearch={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /new page/i }));
 
     await waitFor(() => {
@@ -119,32 +120,32 @@ describe("Sidebar — nested pages", () => {
   });
 
   it("shows expand toggle for pages that have children", () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     expect(
       screen.getByRole("button", { name: /expand parent page/i })
     ).toBeInTheDocument();
   });
 
   it("does not show expand toggle for leaf pages", () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     expect(
       screen.queryByRole("button", { name: /expand ideas/i })
     ).not.toBeInTheDocument();
   });
 
   it("hides child pages by default", () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     expect(screen.queryByText("Child Page")).not.toBeInTheDocument();
   });
 
   it("reveals child pages after clicking expand", async () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /expand parent page/i }));
     expect(screen.getByText("Child Page")).toBeInTheDocument();
   });
 
   it("hides child pages after expand then collapse", async () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     const toggle = screen.getByRole("button", { name: /expand parent page/i });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
@@ -152,13 +153,13 @@ describe("Sidebar — nested pages", () => {
   });
 
   it("sets aria-expanded=false by default", () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     const toggle = screen.getByRole("button", { name: /expand parent page/i });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
   it("sets aria-expanded=true after expanding", async () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     const toggle = screen.getByRole("button", { name: /expand parent page/i });
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -169,7 +170,7 @@ describe("Sidebar — nested pages", () => {
       json: async () => ({ data: { id: "child-id", title: "Untitled" } }),
     }));
 
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     await userEvent.click(
       screen.getByRole("button", { name: /add page inside parent page/i })
     );
@@ -188,7 +189,7 @@ describe("Sidebar — nested pages", () => {
   });
 
   it("child pages are also linked to their route", async () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /expand parent page/i }));
     expect(screen.getByRole("link", { name: /child page/i })).toHaveAttribute(
       "href",
@@ -199,7 +200,7 @@ describe("Sidebar — nested pages", () => {
   it("calls DELETE /api/pages/:id when delete button is clicked", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({}) }));
 
-    render(<Sidebar pages={mockPages} />);
+    render(<Sidebar pages={mockPages} onOpenSearch={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /delete getting started/i }));
 
     await waitFor(() => {
@@ -212,7 +213,7 @@ describe("Sidebar — nested pages", () => {
   });
 
   it("shows the page icon when set", () => {
-    render(<Sidebar pages={mockPagesNested} />);
+    render(<Sidebar pages={mockPagesNested} onOpenSearch={vi.fn()} />);
     // Child Page has icon "📝", expand parent to see child
     userEvent.click(screen.getByRole("button", { name: /expand parent page/i }));
     // icon rendered in the sidebar tree item for Parent Page doesn't exist (icon: null)

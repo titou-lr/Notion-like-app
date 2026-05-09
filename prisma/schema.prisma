@@ -12,11 +12,45 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  pages     Page[]
-  createdAt DateTime @default(now())
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  pages         Page[]
+  reminders     Reminder[]
+  reminderLists ReminderList[]
+  createdAt     DateTime       @default(now())
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+model ReminderList {
+  id        String     @id @default(cuid())
+  name      String
+  color     String?
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  reminders Reminder[]
+  createdAt DateTime   @default(now())
+}
+
+model Reminder {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  dueAt       DateTime?
+  priority    Priority      @default(NORMAL)
+  isDone      Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  listId      String?
+  list        ReminderList? @relation(fields: [listId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model Page {

@@ -32,3 +32,33 @@ export interface SearchResult {
   pageIcon: string | null;
   excerpt: string | null;
 }
+
+export type Priority = "LOW" | "NORMAL" | "HIGH";
+
+export interface ReminderListItem {
+  id: string;
+  name: string;
+  color: string | null;
+  createdAt: string;
+}
+
+export interface CreateReminderData {
+  title: string;
+  description?: string;
+  dueAt?: string;
+  priority?: Priority;
+  listId?: string;
+}
+
+export interface ReminderItem {
+  id: string;
+  title: string;
+  description: string | null;
+  dueAt: string | null;
+  priority: Priority;
+  isDone: boolean;
+  listId: string | null;
+  list: { id: string; name: string; color: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+}
