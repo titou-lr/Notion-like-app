@@ -1,24 +1,24 @@
-# Notion Clone — Project Instructions
+# Notion-like App — Project Instructions
 
 ## Overview
-A personal Notion-like app: rich text pages, nested blocks, sidebar navigation.
-Solo user. Dark-first UI. Built to be clean, fast, and maintainable.
+A personal productivity app combining Notes, Reminders, and Calendar in one place.
+Solo user. Liquid Glass aesthetic (Apple iOS inspired). Mobile-first, deployed on Vercel.
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology                              |
-|------------|-----------------------------------------|
-| Framework  | Next.js 14 (App Router)                 |
-| Language   | TypeScript (strict mode)                |
-| Styling    | Tailwind CSS + CSS variables            |
-| Components | shadcn/ui (customized, never default)   |
-| Animations | Framer Motion                           |
-| Database   | Supabase (PostgreSQL)                   |
-| ORM        | Prisma                                  |
-| Auth       | Supabase Auth                           |
-| Deploy     | Vercel                                  |
+| Layer      | Technology                          |
+|------------|-------------------------------------|
+| Framework  | Next.js 14 (App Router)             |
+| Language   | TypeScript (strict mode)            |
+| Styling    | Tailwind CSS + CSS variables        |
+| Components | shadcn/ui (always customized)       |
+| Animations | Framer Motion                       |
+| Database   | Supabase (PostgreSQL)               |
+| ORM        | Prisma                              |
+| Auth       | Supabase Auth                       |
+| Deploy     | Vercel                              |
 
 ---
 
@@ -26,27 +26,116 @@ Solo user. Dark-first UI. Built to be clean, fast, and maintainable.
 
 ```
 /
-├── app/                        # Next.js App Router
+├── app/
 │   ├── (auth)/                 # Login / signup pages
-│   ├── (app)/                  # Protected app pages
-│   │   ├── layout.tsx          # Sidebar + main layout
-│   │   └── page/[id]/          # Individual page view
-│   └── api/                    # API Routes (server actions)
+│   ├── (app)/
+│   │   ├── layout.tsx          # Bottom nav + sidebar shell
+│   │   ├── today/              # Dashboard Today (default on open)
+│   │   ├── page/[id]/          # Individual notes page
+│   │   ├── reminders/          # Reminders module
+│   │   └── calendar/           # Calendar module
+│   └── api/                    # API Routes
 ├── components/
 │   ├── ui/                     # shadcn/ui base components
 │   ├── editor/                 # Block editor components
-│   ├── sidebar/                # Sidebar & navigation
-│   └── shared/                 # Reusable across features
+│   ├── sidebar/                # Notes sidebar & navigation
+│   ├── nav/                    # Bottom navigation bar
+│   ├── reminders/              # Reminder components
+│   ├── calendar/               # Calendar components
+│   ├── today/                  # Today dashboard components
+│   └── shared/                 # Reusable across modules
 ├── lib/
 │   ├── supabase/               # Supabase client & helpers
-│   ├── prisma/                 # Prisma client
-│   └── utils.ts                # Shared utilities
+│   ├── prisma/                 # Prisma client singleton
+│   └── utils.ts
 ├── hooks/                      # Custom React hooks
 ├── types/                      # TypeScript type definitions
-├── prisma/
-│   └── schema.prisma           # Database schema
-└── CLAUDE.md
+└── prisma/
+    └── schema.prisma
 ```
+
+---
+
+## Navigation Architecture (Mobile-first)
+
+Bottom navigation bar with 4 tabs — always visible:
+- 🏠 **Today** — default on open, dashboard view
+- 📝 **Notes** — existing page/block editor
+- ⏰ **Reminders** — task & reminder module
+- 📅 **Calendar** — schedule & events module
+
+On desktop: bottom nav becomes a fixed left sidebar with the same 4 icons.
+Each module has its own internal sidebar (left drawer on mobile) for sub-navigation.
+
+---
+
+## Design System — Liquid Glass
+
+### Philosophy
+Mobile-first. Apple Liquid Glass aesthetic: frosted surfaces floating above a background image.
+Every surface feels like glass. No solid dark backgrounds.
+
+### Background
+- Full-screen background image, fixed (does not scroll)
+- Default: misty Japanese bamboo forest (Unsplash URL)
+- User can change via Settings → Wallpaper (URL input, saved to localStorage)
+
+### Glass Surface (apply to all panels, cards, blocks, menus)
+```css
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+```
+
+### CSS Variables (globals.css)
+```css
+:root {
+  --background:       transparent;
+  --surface:          rgba(255, 255, 255, 0.08);
+  --surface-hover:    rgba(255, 255, 255, 0.13);
+  --border:           rgba(255, 255, 255, 0.15);
+  --border-strong:    rgba(255, 255, 255, 0.25);
+  --text-primary:     rgba(255, 255, 255, 0.92);
+  --text-secondary:   rgba(255, 255, 255, 0.55);
+  --text-disabled:    rgba(255, 255, 255, 0.3);
+  --accent:           rgba(255, 255, 255, 0.95);
+  --destructive:      rgba(255, 87, 87, 0.9);
+  --success:          rgba(0, 204, 136, 0.9);
+}
+```
+
+### Border Radius
+- Panels, cards, modals : `16px`
+- Buttons, inputs, blocks : `12px`
+- Small elements (badges, tags) : `8px`
+- **No sharp edges anywhere**
+
+### Typography
+- **Font**: Inter (Google Fonts, weights 400/500/600)
+- Body: `--text-primary`, line-height 1.6
+- Headings: white, font-weight 600
+- H1: 2rem, letter-spacing -0.02em
+- H2: 1.5rem
+- H3: 1.25rem
+- Code blocks: Geist Mono
+- **NEVER use**: Geist, Roboto, Arial, system-ui as primary font
+
+### Animations (Framer Motion)
+```typescript
+const fadeIn = {
+  initial: { opacity: 0, y: 4 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.2 }
+}
+```
+- Hover transitions: `duration-150`
+- Page transitions: `duration-300`
+- Drawer open/close: slide + blur increase
 
 ---
 
@@ -54,26 +143,28 @@ Solo user. Dark-first UI. Built to be clean, fast, and maintainable.
 
 ```prisma
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   name      String?
   pages     Page[]
-  createdAt DateTime @default(now())
+  reminders Reminder[]
+  events    Event[]
+  createdAt DateTime   @default(now())
 }
 
 model Page {
-  id          String   @id @default(cuid())
-  title       String   @default("Untitled")
-  icon        String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  parentId    String?
-  parent      Page?    @relation("PageChildren", fields: [parentId], references: [id])
-  children    Page[]   @relation("PageChildren")
-  blocks      Block[]
-  isDeleted   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String   @default("Untitled")
+  icon      String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  parentId  String?
+  parent    Page?    @relation("PageChildren", fields: [parentId], references: [id])
+  children  Page[]   @relation("PageChildren")
+  blocks    Block[]
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Block {
@@ -87,72 +178,53 @@ model Block {
   updatedAt DateTime  @updatedAt
 }
 
+model Reminder {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  dueAt       DateTime?
+  priority    Priority      @default(NORMAL)
+  isDone      Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  listId      String?
+  list        ReminderList? @relation(fields: [listId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ReminderList {
+  id        String     @id @default(cuid())
+  name      String
+  color     String?
+  userId    String
+  reminders Reminder[]
+  createdAt DateTime   @default(now())
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  color       String?
+  isRecurring Boolean  @default(false)
+  recurrence  String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum BlockType {
-  TEXT
-  HEADING_1
-  HEADING_2
-  HEADING_3
-  BULLET_LIST
-  NUMBERED_LIST
-  CODE
-  IMAGE
-  DIVIDER
-  QUOTE
-  TODO
-}
-```
-
----
-
-## Design System
-
-### Philosophy
-Dark-first. Inspired by Vercel's dashboard: high contrast, generous whitespace,
-sharp edges, no gradients. Every pixel intentional.
-
-### Color Palette (CSS variables in globals.css)
-```css
-:root {
-  --background:       #0a0a0a;   /* Near-black */
-  --surface:          #111111;   /* Card / panel */
-  --surface-hover:    #1a1a1a;   /* Hover state */
-  --border:           #222222;   /* Subtle borders */
-  --border-strong:    #333333;   /* Visible borders */
-  --text-primary:     #ededed;   /* Main text */
-  --text-secondary:   #888888;   /* Muted text */
-  --text-disabled:    #444444;   /* Disabled state */
-  --accent:           #ffffff;   /* Primary accent */
-  --accent-muted:     #a0a0a0;   /* Secondary accent */
-  --destructive:      #ff4444;   /* Errors / delete */
-  --success:          #00cc88;   /* Success states */
-}
-```
-
-### Typography
-- **Display / Headings**: `Geist` (Vercel's font — clean, modern, techy)
-- **Body**: `Geist Mono` pour les blocs de code, `Geist` pour le reste
-- **Scale**: Use Tailwind's default scale (text-sm, text-base, text-lg, etc.)
-- **NEVER use**: Inter, Roboto, Arial, or system-ui as primary fonts
-
-### Component Rules
-- shadcn/ui est une base, pas un style final. **Toujours customiser** avec Tailwind.
-- Pas de border-radius > `rounded-lg` (max 8px). On reste sharp.
-- Shadows légères uniquement : `shadow-sm` ou custom `0 1px 3px rgba(0,0,0,0.5)`
-- Animations : subtiles. `duration-150` pour les hovers, `duration-300` pour les transitions de page.
-
-### Animation Patterns (Framer Motion)
-```typescript
-// Apparition d'un élément
-const fadeIn = {
-  initial: { opacity: 0, y: 4 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.2 }
+  TEXT HEADING_1 HEADING_2 HEADING_3
+  BULLET_LIST NUMBERED_LIST CODE
+  IMAGE DIVIDER QUOTE TODO
 }
 
-// Liste d'éléments (stagger)
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.05 } }
-}
+enum Priority { LOW NORMAL HIGH }
 ```
 
 ---
@@ -160,109 +232,59 @@ const staggerContainer = {
 ## Coding Standards
 
 ### TypeScript
-- **Strict mode** activé dans `tsconfig.json`
-- Toujours typer les props avec une `interface`, pas `type` pour les objets
-- Pas de `any`. Si tu ne sais pas le type : `unknown` puis narrow.
-- Exporter les types depuis `types/index.ts`
+- Strict mode activé
+- Props typées avec `interface`, pas `type`
+- Pas de `any` — utiliser `unknown` puis narrow
+- Types exportés depuis `types/index.ts`
 
 ### React / Next.js
-- **Server Components par défaut** (App Router). N'ajouter `"use client"` que si nécessaire (interactivité, hooks).
-- **Pas de `useEffect` pour fetcher des données** — utiliser les Server Components ou React Query.
-- Props toujours destructurées dans la signature de la fonction.
-- Un composant = un fichier. Nom du fichier = nom du composant (PascalCase).
+- Server Components par défaut
+- `"use client"` uniquement si nécessaire
+- Pas de `useEffect` pour fetcher — Server Components ou React Query
+- Props destructurées dans la signature
+- Un composant = un fichier, PascalCase
+- Composants > 200 lignes → découper
 
-```typescript
-// ✅ Bon
-interface PageTitleProps {
-  title: string;
-  isEditing?: boolean;
-  onSave: (title: string) => void;
-}
+### API Routes
+- Toutes dans `app/api/`, valider avec Zod
+- `return NextResponse.json({ data }, { status: 200 })`
+- `return NextResponse.json({ error: "Message" }, { status: 400 })`
 
-export const PageTitle = ({ title, isEditing = false, onSave }: PageTitleProps) => {
-  return <h1>{title}</h1>;
-};
+### Prisma / Supabase
+- Toujours Prisma pour les queries, jamais de SQL raw
+- Supabase uniquement pour auth et storage
 
-// ❌ Mauvais
-export default function pageTitle(props: any) {
-  return <h1>{props.title}</h1>;
-}
-```
-
-### API Routes (Next.js)
-- Toutes les routes dans `app/api/`
-- Utiliser `NextResponse` pour les réponses
-- Toujours valider les inputs (Zod recommandé)
-- Format d'erreur uniforme :
-
-```typescript
-// Succès
-return NextResponse.json({ data: result }, { status: 200 });
-
-// Erreur
-return NextResponse.json({ error: "Message clair" }, { status: 400 });
-```
-
-### Supabase / Prisma
-- **Toujours utiliser Prisma** pour les queries. Jamais de SQL raw.
-- Le client Prisma est un singleton dans `lib/prisma/client.ts`
-- Les helpers Supabase (auth, storage) dans `lib/supabase/`
+### Mobile
+- Touch targets minimum 44px
+- Tester sur viewport 390px (iPhone 14)
+- Toujours `-webkit-backdrop-filter` avec `backdrop-filter`
+- Pas de hover-only interactions
 
 ---
 
 ## Development Workflow
 
-### Avant chaque feature
-1. Utilise `/superpowers:brainstorm` pour clarifier le design
-2. Utilise `/superpowers:write-plan` pour découper en petites étapes
-3. **Écris le test en premier** (TDD) avant le code
+1. `/superpowers:brainstorm` avant toute feature
+2. `/superpowers:write-plan` pour découper
+3. TDD sauf features purement visuelles
+4. Une feature = une branche `feat/nom`
+5. Conventional commits : `feat:` `fix:` `style:` `refactor:`
 
-### Pendant le développement
-- Une feature = une branche git (`feat/nom-de-la-feature`)
-- Commits fréquents avec Conventional Commits :
-  - `feat:` nouvelle feature
-  - `fix:` correction de bug
-  - `style:` changement visuel sans logique
-  - `refactor:` restructuration sans nouvelle feature
-  - `test:` ajout ou modification de tests
-  - `chore:` config, dépendances
-
-### Tests
-```typescript
-// Pattern pour chaque feature
-describe('PageTitle', () => {
-  it('renders the title', () => { /* ... */ });
-  it('enters edit mode on click', () => { /* ... */ });
-  it('saves on blur', () => { /* ... */ });
-  it('saves on Enter key', () => { /* ... */ });
-});
-```
-
-### Quand quelque chose casse
-Utilise le skill `debugging` de superpowers. Ne pas modifier du code au hasard.
+### Règles absolues
+- ❌ Ne jamais commiter `.env`
+- ❌ Ne jamais hardcoder des couleurs
+- ❌ Ne jamais modifier Prisma sans migration
+- ❌ Ne jamais utiliser `any`
+- ❌ Ne jamais fetch dans `useEffect`
+- ❌ Ne jamais oublier `-webkit-backdrop-filter`
 
 ---
 
-## Key Skills to Use
+## Key Skills
 
-| Situation                        | Skill à invoquer                  |
-|----------------------------------|-----------------------------------|
-| Démarrer une nouvelle feature    | `/superpowers:brainstorm`         |
-| Planifier l'implémentation       | `/superpowers:write-plan`         |
-| Quelque chose ne marche pas      | `debugging` (superpowers)         |
-| Design de composant complexe     | `software-architecture`           |
-| UI / composant visuel            | `frontend-design` (anthropics)    |
-| Avant de dire "c'est terminé"    | `verification-before-completion`  |
-
----
-
-## What NOT to Do
-
-- ❌ Ne pas créer de fichiers dans `node_modules/`
-- ❌ Ne pas commiter `.env` ou `.env.local`
-- ❌ Ne pas utiliser `any` en TypeScript
-- ❌ Ne pas fetch de données dans `useEffect`
-- ❌ Ne pas modifier le schéma Prisma sans migration (`prisma migrate dev`)
-- ❌ Ne pas hardcoder des couleurs — utiliser les CSS variables
-- ❌ Ne pas utiliser des fonts génériques (Inter, Roboto, Arial)
-- ❌ Ne pas créer de composants > 200 lignes — découper en sous-composants
+| Situation                     | Skill                            |
+|-------------------------------|----------------------------------|
+| Nouvelle feature              | `/superpowers:brainstorm`        |
+| Planifier l'implémentation    | `/superpowers:write-plan`        |
+| Bug / erreur                  | `debugging` (superpowers)        |
+| Avant de dire "c'est terminé" | `verification-before-completion` |
