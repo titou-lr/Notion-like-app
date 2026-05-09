@@ -47,6 +47,17 @@ export async function getPage(pageId: string, userId: string) {
   });
 }
 
+export async function updatePageTitle(
+  pageId: string,
+  userId: string,
+  title: string
+) {
+  return prisma.page.updateMany({
+    where: { id: pageId, userId, isDeleted: false },
+    data: { title },
+  });
+}
+
 export async function updatePageIcon(
   pageId: string,
   userId: string,

@@ -3,16 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
 import type { SidebarPage } from "@/types";
 import { PageTreeItem } from "./PageTreeItem";
 import { SettingsMenu } from "./SettingsMenu";
 
 interface SidebarProps {
   pages: SidebarPage[];
+  onOpenSearch: () => void;
 }
 
-export function Sidebar({ pages }: SidebarProps) {
+export function Sidebar({ pages, onOpenSearch }: SidebarProps) {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
@@ -28,9 +29,17 @@ export function Sidebar({ pages }: SidebarProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center h-12 px-4 shrink-0 border-b border-white/10">
-        <span className="font-semibold text-sm tracking-tight text-text-primary">
+        <span className="font-semibold text-sm tracking-tight text-text-primary flex-1">
           Pages
         </span>
+        {/* Desktop only — on mobile the search button lives in AppShell's top bar */}
+        <button
+          aria-label="Search pages"
+          onClick={onOpenSearch}
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-xl text-text-disabled hover:text-text-secondary hover:bg-white/[0.08] transition-all duration-150"
+        >
+          <Search size={14} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 px-2">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  updatePageTitle,
   updatePageIcon,
   softDeletePage,
   permanentDeletePage,
@@ -21,9 +22,10 @@ const patchSchema = z
   .object({
     icon: z.string().nullable().optional(),
     isDeleted: z.literal(false).optional(),
+    title: z.string().optional(),
   })
   .refine(
-    (d) => d.icon !== undefined || d.isDeleted !== undefined,
+    (d) => d.icon !== undefined || d.isDeleted !== undefined || d.title !== undefined,
     "At least one field required"
   );
 
@@ -46,7 +48,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { icon, isDeleted } = result.data;
+  const { icon, isDeleted, title } = result.data;
+  if (title !== undefined) await updatePageTitle(params.id, user.id, title);
   if (icon !== undefined) await updatePageIcon(params.id, user.id, icon);
   if (isDeleted === false) await restorePage(params.id, user.id);
 

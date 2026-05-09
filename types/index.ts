@@ -25,3 +25,10 @@ export interface SidebarPage {
   parentId: string | null;
   children: SidebarPage[];
 }
+
+export interface SearchResult {
+  pageId: string;
+  pageTitle: string;
+  pageIcon: string | null;
+  excerpt: string | null;
+}

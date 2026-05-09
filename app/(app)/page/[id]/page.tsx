@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPage } from "@/lib/data/pages";
 import { BlockEditor } from "@/components/editor/BlockEditor";
 import { PageIcon } from "@/components/editor/PageIcon";
+import { PageTitle } from "@/components/editor/PageTitle";
 import type { Block } from "@/types";
 
 interface PageProps {
@@ -26,9 +27,7 @@ export default async function PageView({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 md:px-12 md:py-16">
       <PageIcon pageId={params.id} initialIcon={page.icon ?? null} />
-      <h1 className="text-4xl font-bold text-text-primary mb-8 tracking-tight">
-        {page.title || "Untitled"}
-      </h1>
+      <PageTitle pageId={params.id} initialTitle={page.title} />
       <BlockEditor pageId={params.id} blocks={blocks} />
     </div>
   );
