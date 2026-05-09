@@ -52,7 +52,7 @@ export default function SignupPage() {
     }
 
     if (data.session) {
-      router.push("/");
+      router.push("/today");
       router.refresh();
     } else {
       setEmailSent(true);

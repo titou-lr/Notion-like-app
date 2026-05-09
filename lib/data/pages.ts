@@ -89,6 +89,20 @@ export async function permanentDeletePage(pageId: string, userId: string) {
   });
 }
 
+export async function getRecentPages(
+  supabaseUserId: string,
+  email: string,
+  limit = 5
+): Promise<{ id: string; title: string; icon: string | null; updatedAt: Date }[]> {
+  const user = await upsertUser(supabaseUserId, email);
+  return prisma.page.findMany({
+    where: { userId: user.id, isDeleted: false },
+    orderBy: { updatedAt: "desc" },
+    take: limit,
+    select: { id: true, title: true, icon: true, updatedAt: true },
+  }) as unknown as Promise<{ id: string; title: string; icon: string | null; updatedAt: Date }[]>;
+}
+
 export async function getTrashedPages(supabaseUserId: string, email: string) {
   const user = await upsertUser(supabaseUserId, email);
 
