@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Trash2, RotateCw } from "lucide-react";
-import { EVENT_CATEGORIES, getCategoryById, localDateString } from "@/lib/calendar-utils";
+import { EVENT_CATEGORIES, localDateString } from "@/lib/calendar-utils";
 import type { CalendarEvent, CreateEventData } from "@/types";
 
 interface EventModalProps {
